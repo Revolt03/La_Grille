@@ -6,19 +6,15 @@
 
 #IncludeRegexTransform: 
 
-/mnt/c/Users/LUCAS/Documents/La_Grille/Grille.cpp
-Grille.h
-/mnt/c/Users/LUCAS/Documents/La_Grille/Grille.h
-iostream
--
-fstream
--
-iomanip
--
-
 /mnt/c/Users/LUCAS/Documents/La_Grille/Grille.h
 vector
 -
 string
 -
+
+/mnt/c/Users/LUCAS/Documents/La_Grille/main.cpp
+iostream
+-
+Grille.h
+/mnt/c/Users/LUCAS/Documents/La_Grille/Grille.h
 
