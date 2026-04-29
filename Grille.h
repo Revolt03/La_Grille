@@ -13,5 +13,6 @@ struct Grille {
     matrice valeurs;
 };
 
+
 bool lireInstance(std::string & cheminFichier, Grille & grille);
 void afficherGrille(Grille & grille);
