@@ -13,6 +13,12 @@ struct Grille {
     matrice valeurs;
 };
 
+struct Resultat_Grille {
+    int meilleur_score;
+    int conflits;
+    matrice placement;
+};
 
 bool lireInstance(std::string & cheminFichier, Grille & grille);
 void afficherGrille(Grille & grille);
+Resultat_Grille separationEtEvaluation(const Grille & grille);
