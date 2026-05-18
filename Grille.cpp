@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <limits>
 #include <algorithm>
+#include <filesystem>
+#include <chrono>
 
 struct Position {
     int ligne;
@@ -48,7 +50,39 @@ void afficherGrille(Grille & grille) {
         }
         std::cout<<std::endl;
     }
-    std::cout<<"----------------------"<<std::endl;
+    std::cout<<"---------------------"<<std::endl;
+}
+
+bool ecrireSolution(const std::string & cheminFichierSolution, const Grille & grille, const Resultat_Grille & resultat) {
+    std::filesystem::path cheminSortie(cheminFichierSolution);
+    std::error_code ec;
+    std::filesystem::create_directories(cheminSortie.parent_path(), ec);
+    if (ec) {
+        std::cout<<"Erreur : impossible de creer le dossier "<<cheminSortie.parent_path().string()<<std::endl;
+        return false;
+    }
+
+    std::ofstream fichier(cheminSortie);
+    if (!fichier.is_open()) {
+        std::cout<<"Erreur : impossible d'ecrire dans "<<cheminFichierSolution<<std::endl;
+        return false;
+    }
+
+    bool premier = true;
+    for (int i = 0; i < grille.taille; ++i) {
+        for (int j = 0; j < grille.taille; ++j) {
+            if (resultat.placement[i][j] != 0) {
+                int position = i * grille.taille + j + 1; // numerotation 1..t^2
+                if (!premier) {
+                    fichier<<" ";
+                }
+                fichier<<position;
+                premier = false;
+            }
+        }
+    }
+    fichier<<"\n"<<resultat.meilleur_score<<"\n";
+    return true;
 }
 
 int conflitsAvec(const std::vector<Position> & positions, int ligne, int colonne) {
@@ -77,7 +111,8 @@ matrice construirePlacement(int taille, const std::vector<Position> & positions)
 
 std::vector<int> convertirGrilleEnVecteur(const Grille & grille) {
     std::vector<int> valeurs(grille.taille * grille.taille, 0);
-    for (int i = 0; i < grille.taille; ++i) {
+    for (int i = 0; i < grille.taille; ++i) 
+    {
         for (int j = 0; j < grille.taille; ++j) {
             valeurs[i * grille.taille + j] = grille.valeurs[i][j];
         }
@@ -97,6 +132,10 @@ int g_meilleur_score = std::numeric_limits<int>::min(); // score du meilleur pla
 int g_meilleurs_conflits = 0; // nombre de conflits du meilleur placement trouvé jusqu'à présent
 int g_score_brut = 0; // somme des valeurs des jetons poses
 int g_conflits = 0;   // nombre de conflits en cours
+
+bool g_limite_active = false;
+bool g_limite_atteinte = false;
+std::chrono::steady_clock::time_point g_deadline;
 
 
 // A REVOIR POUR .RESERVE
@@ -136,6 +175,15 @@ void backtrackingBB(int index, int places) {
 
     static long long noeuds = 0;
     ++noeuds;
+    if (g_limite_active && (noeuds & 4095LL) == 0) {
+        if (std::chrono::steady_clock::now() >= g_deadline) {
+            g_limite_atteinte = true;
+            return;
+        }
+    }
+    if (g_limite_atteinte) {
+        return;
+    }
     if (noeuds % 1000000 == 0) {
         std::cout<<"Noeuds visites : "<<noeuds<<" | index="<<index<<" | places="<<places<<std::endl; //
     }
@@ -197,7 +245,7 @@ void backtrackingBB(int index, int places) {
 
 
 
-Resultat_Grille separationEtEvaluation(const Grille & grille) {
+Resultat_Grille separationEtEvaluation(const Grille & grille, int max_ms) {
     // point d'entree de la recherche
     g_taille = grille.taille;
     g_nb_jetons = grille.nb_jetons;
@@ -214,11 +262,18 @@ Resultat_Grille separationEtEvaluation(const Grille & grille) {
     g_score_brut = 0;
     g_conflits = 0;
 
+    g_limite_active = max_ms > 0;
+    g_limite_atteinte = false;
+    if (g_limite_active) {
+        g_deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(max_ms);
+    }
+
     backtrackingBB(0, 0);
 
     Resultat_Grille resultat;
     resultat.meilleur_score = g_meilleur_score;
     resultat.conflits = g_meilleurs_conflits;
     resultat.placement = construirePlacement(grille.taille, g_meilleure_positions);
+    resultat.limite_atteinte = g_limite_atteinte;
     return resultat;
 }
