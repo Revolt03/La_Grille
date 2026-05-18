@@ -1,3 +1,0 @@
-/mnt/c/Users/LUCAS/Documents/La_Grille/build/CMakeFiles/rebuild_cache.dir
-/mnt/c/Users/LUCAS/Documents/La_Grille/build/CMakeFiles/edit_cache.dir
-/mnt/c/Users/LUCAS/Documents/La_Grille/build/CMakeFiles/La_Grille.out.dir
